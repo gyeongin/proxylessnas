@@ -23,7 +23,9 @@ ref_values = {
         '1.00': 80,
     },
     'cpu': {},
-    'gpu8': {},
+    'gpu8': {
+        '1.35': 5.5,
+    },
 }
 
 parser = argparse.ArgumentParser()
@@ -56,7 +58,7 @@ parser.add_argument('--init_div_groups', action='store_true')
 parser.add_argument('--validation_frequency', type=int, default=1)
 parser.add_argument('--print_frequency', type=int, default=10)
 
-parser.add_argument('--n_worker', type=int, default=32)
+parser.add_argument('--n_worker', type=int, default=16)
 parser.add_argument('--resize_scale', type=float, default=0.08)
 parser.add_argument('--distort_color', type=str, default='normal', choices=['normal', 'strong', 'None'])
 
@@ -71,7 +73,7 @@ parser.add_argument('--dropout', type=float, default=0)
 
 # architecture search config
 """ arch search algo and warmup """
-parser.add_argument('--arch_algo', type=str, default='grad', choices=['grad', 'rl'])
+parser.add_argument('--arch_algo', type=str, default='rl', choices=['grad', 'rl'])
 parser.add_argument('--warmup_epochs', type=int, default=40)
 """ shared hyper-parameters """
 parser.add_argument('--arch_init_type', type=str, default='normal', choices=['normal', 'uniform'])
@@ -82,7 +84,7 @@ parser.add_argument('--arch_adam_beta1', type=float, default=0)  # arch_opt_para
 parser.add_argument('--arch_adam_beta2', type=float, default=0.999)  # arch_opt_param
 parser.add_argument('--arch_adam_eps', type=float, default=1e-8)  # arch_opt_param
 parser.add_argument('--arch_weight_decay', type=float, default=0)
-parser.add_argument('--target_hardware', type=str, default=None, choices=['mobile', 'cpu', 'gpu8', 'flops', None])
+parser.add_argument('--target_hardware', type=str, default='gpu8', choices=['mobile', 'cpu', 'gpu8', 'flops', None])
 """ Grad hyper-parameters """
 parser.add_argument('--grad_update_arch_param_every', type=int, default=5)
 parser.add_argument('--grad_update_steps', type=int, default=1)
