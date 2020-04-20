@@ -443,6 +443,7 @@ class RunManager:
 
     def write_log(self, log_str, prefix, should_print=True):
         """ prefix: valid, train, test """
+        log_str = time.strftime('%m/%d %H:%M:%S ') + log_str
         if prefix in ['valid', 'test']:
             with open(os.path.join(self.logs_path, 'valid_console.txt'), 'a') as fout:
                 fout.write(log_str + '\n')

@@ -52,7 +52,7 @@ parser.add_argument('--distort_color', type=str, default='strong', choices=['nor
 parser.add_argument('--bn_momentum', type=float, default=0.1)
 parser.add_argument('--bn_eps', type=float, default=1e-3)
 parser.add_argument(
-    '--net', type=str, default='proxyless_mobile',
+    '--net', type=str, default=None,
     choices=['proxyless_gpu', 'proxyless_cpu', 'proxyless_mobile', 'proxyless_mobile_14']
 )
 parser.add_argument('--dropout', type=float, default=0)
@@ -71,31 +71,18 @@ if __name__ == '__main__':
 
     # prepare run config
     run_config_path = '%s/run.config' % args.path
-    if os.path.isfile(run_config_path):
-        # load run config from file
-        run_config = json.load(open(run_config_path, 'r'))
-        run_config = ImagenetRunConfig(**run_config)
-        if args.valid_size:
-            run_config.valid_size = args.valid_size
-    else:
-        # build run config from args
-        args.lr_schedule_param = None
-        args.opt_param = {
-            'momentum': args.momentum,
-            'nesterov': not args.no_nesterov,
-        }
-        if args.no_decay_keys == 'None':
-            args.no_decay_keys = None
-        run_config = ImagenetRunConfig(
-            **args.__dict__
-        )
+    assert os.path.isfile(run_config_path)
+    # load run config from file
+    run_config = json.load(open(run_config_path, 'r'))
+    run_config = ImagenetRunConfig(**run_config)
     print('Run config:')
     for k, v in run_config.config.items():
         print('\t%s: %s' % (k, v))
 
     # prepare network
-    net_config_path = '%s/net.config' % args.path
-    if os.path.isfile(net_config_path):
+    if args.net is None:
+        net_config_path = '%s/net.config' % args.path
+        assert os.path.isfile(net_config_path)
         # load net from file
         from models import get_net_by_name
         net_config = json.load(open(net_config_path, 'r'))
@@ -140,6 +127,11 @@ if __name__ == '__main__':
         net.load_state_dict(init['state_dict'])
     else:
         print('Random initialization')
+
+    print('Test on test set')
+    loss, acc1, acc5 = run_manager.validate(is_test=True, return_top5=True)
+    log = 'test_loss: %f\t test_acc1: %f\t test_acc5: %f' % (loss, acc1, acc5)
+    run_manager.write_log(log, prefix='test')
 
     # train
     if args.train:
