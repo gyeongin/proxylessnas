@@ -236,18 +236,17 @@ class RunManager:
         return flop
 
     # noinspection PyUnresolvedReferences
-    def net_latency(self, l_type='gpu4', fast=True, given_net=None):
+    def net_latency(self, l_type='gpu4', fast=True):
         if 'gpu' in l_type:
             l_type, batch_size = l_type[:3], int(l_type[3:])
+        elif 'graph' in l_type:
+            l_type, batch_size = l_type[:5], int(l_type[5:])
         else:
             batch_size = 1
 
         data_shape = [batch_size] + list(self.run_config.data_provider.data_shape)
 
-        if given_net is not None:
-            net = given_net
-        else:
-            net = self.net.module
+        net = self.net.module
 
         if l_type == 'mobile':
             predicted_latency = 0
@@ -305,29 +304,59 @@ class RunManager:
                 print(type(self.net_on_cpu_for_latency), ' do not `support set_active_via_net()`')
             net = self.net_on_cpu_for_latency
             images = torch.zeros(data_shape, device=torch.device('cpu'))
-        elif l_type == 'gpu':
+        elif l_type == 'gpu' or l_type == 'graph':
             if fast:
                 n_warmup = 5
                 n_sample = 10
             else:
                 n_warmup = 50
                 n_sample = 100
-            images = torch.zeros(data_shape, device=self.device)
+            if l_type == 'gpu':
+                images = torch.zeros(data_shape, device=self.device)
+            else:
+                images = torch.randn(data_shape, device=self.device)
         else:
             raise NotImplementedError
 
         measured_latency = {'warmup': [], 'sample': []}
         net.eval()
+
+        if l_type == 'graph':
+            torch.backends.cudnn.enabled = False
+            graph = torch.cuda.capture(net, images)
+            graph.inputs[0].copy_(images)
+            with torch.no_grad():
+                desired_output = net(images)
+            output = graph.outputs[0]
+
+            try:
+                np.testing.assert_almost_equal(output.cpu().numpy(), desired_output.cpu().numpy(), decimal=5)
+            except AssertionError as err:
+                self.write_log('WARNING: assertion failed', 'train')
+                self.write_log(err, 'train')
+                self.write_log('-' * 30 + 'Current Architecture' + '-' * 30, prefix='train')
+                for idx, block in enumerate(net.blocks):
+                    self.write_log('%d. %s' % (idx, block.module_str), prefix='train')
+                self.write_log('-' * 60, prefix='train')
+
+            torch.backends.cudnn.enabled = True
+            net = lambda x: graph.launch()
+
+        start_event = torch.cuda.Event(enable_timing=True)
+        end_event = torch.cuda.Event(enable_timing=True)
+
         with torch.no_grad():
             for i in range(n_warmup + n_sample):
-                start_time = time.time()
+                start_event.record()
                 net(images)
-                used_time = (time.time() - start_time) * 1e3  # ms
+                end_event.record()
+                end_event.synchronize()
+                elapsed = start_event.elapsed_time(end_event)
                 if i >= n_warmup:
-                    measured_latency['sample'].append(used_time)
+                    measured_latency['sample'].append(elapsed)
                 else:
-                    measured_latency['warmup'].append(used_time)
-        net.train()
+                    measured_latency['warmup'].append(elapsed)
+        self.net.module.train()
         return sum(measured_latency['sample']) / n_sample, measured_latency
 
     def print_net_info(self, measure_latency=None):

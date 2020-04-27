@@ -26,6 +26,9 @@ ref_values = {
     'gpu8': {
         '1.35': 5.5,
     },
+    'graph1': {
+        '1.35': 1.6,
+    },
 }
 
 parser = argparse.ArgumentParser()
@@ -37,7 +40,7 @@ parser.add_argument('--manual_seed', default=0, type=int)
 
 """ run config """
 parser.add_argument('--n_epochs', type=int, default=120)
-parser.add_argument('--init_lr', type=float, default=0.025)
+parser.add_argument('--init_lr', type=float, default=0.05)
 parser.add_argument('--lr_schedule_type', type=str, default='cosine')
 # lr_schedule_param
 
@@ -56,7 +59,7 @@ parser.add_argument('--no_decay_keys', type=str, default=None, choices=[None, 'b
 parser.add_argument('--model_init', type=str, default='he_fout', choices=['he_fin', 'he_fout'])
 parser.add_argument('--init_div_groups', action='store_true')
 parser.add_argument('--validation_frequency', type=int, default=1)
-parser.add_argument('--print_frequency', type=int, default=10)
+parser.add_argument('--print_frequency', type=int, default=100)
 
 parser.add_argument('--n_worker', type=int, default=16)
 parser.add_argument('--resize_scale', type=float, default=0.08)
@@ -84,7 +87,7 @@ parser.add_argument('--arch_adam_beta1', type=float, default=0)  # arch_opt_para
 parser.add_argument('--arch_adam_beta2', type=float, default=0.999)  # arch_opt_param
 parser.add_argument('--arch_adam_eps', type=float, default=1e-8)  # arch_opt_param
 parser.add_argument('--arch_weight_decay', type=float, default=0)
-parser.add_argument('--target_hardware', type=str, default='gpu8', choices=['mobile', 'cpu', 'gpu8', 'flops', None])
+parser.add_argument('--target_hardware', type=str, default='gpu8', choices=['mobile', 'cpu', 'gpu8', 'graph1', 'flops', None])
 """ Grad hyper-parameters """
 parser.add_argument('--grad_update_arch_param_every', type=int, default=5)
 parser.add_argument('--grad_update_steps', type=int, default=1)

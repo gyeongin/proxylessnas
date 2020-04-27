@@ -28,6 +28,7 @@ def download_url(url, model_dir='~/.torch/proxyless_nas', overwrite=False):
 
 class LatencyEstimator(object):
     def __init__(self, url='https://hanlab.mit.edu/files/proxylessNAS/LatencyTools/mobile_trim.yaml'):
+        return
         fname = download_url(url, overwrite=True)
 
         with open(fname, 'r') as fp:

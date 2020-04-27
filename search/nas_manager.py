@@ -3,6 +3,7 @@
 # International Conference on Learning Representations (ICLR), 2019.
 
 from run_manager import *
+import time
 
 
 class ArchSearchConfig:
@@ -167,6 +168,7 @@ class ArchSearchRunManager:
         return self.run_manager.net.module
 
     def write_log(self, log_str, prefix, should_print=True, end='\n'):
+        log_str = time.strftime('%m/%d %H:%M:%S ') + log_str
         with open(os.path.join(self.run_manager.logs_path, '%s.log' % prefix), 'a') as fout:
             fout.write(log_str + end)
             fout.flush()
